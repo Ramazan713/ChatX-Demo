@@ -3,6 +3,7 @@ package com.example.chatx.features.chat.presentation.navigation
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.navDeepLink
 import com.example.chatx.features.chat.presentation.chat_detail.ChatDetailPageRoot
 import kotlinx.serialization.Serializable
 
@@ -18,7 +19,13 @@ fun NavController.navigateToChatDetail(roomId: String) {
 fun NavGraphBuilder.chatDetail(
     onNavigateBack: () -> Unit
 ) {
-    composable<ChatDetailRoute> {
+    composable<ChatDetailRoute>(
+        deepLinks = listOf(
+            navDeepLink {
+                uriPattern = "chatx://chat/{roomId}"
+            }
+        )
+    ) {
         ChatDetailPageRoot(
             onNavigateBack = onNavigateBack
         )

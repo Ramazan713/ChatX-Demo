@@ -2,6 +2,7 @@ package com.example.chatx.features.auth.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.chatx.core.features.devices.domain.manager.DeviceTokenManager
 import com.example.chatx.features.auth.domain.services.AuthService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -9,7 +10,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class AuthViewModel(
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val deviceTokenManager: DeviceTokenManager
 ): ViewModel(){
 
     private val _state = MutableStateFlow(AuthState())
@@ -37,7 +39,8 @@ class AuthViewModel(
                             message = error.text
                         ) }
                     }
-                    response.onSuccess {
+                    response.onSuccessAsync {
+                        deviceTokenManager.setToken()
                         _state.update { it.copy(
                             uiEvent = AuthUiEvent.NavigateToSuccess
                         ) }
@@ -54,7 +57,8 @@ class AuthViewModel(
                             message = error.text
                         ) }
                     }
-                    response.onSuccess {
+                    response.onSuccessAsync {
+                        deviceTokenManager.setToken()
                         _state.update { it.copy(
                             uiEvent = AuthUiEvent.NavigateToSuccess
                         ) }
