@@ -1,6 +1,7 @@
 import { createSocketValidator } from "../middleware/validate";
 import { chatService } from "./chatService";
 import { mapMessageToDto } from "./mapper";
+import { notifyRoom } from "./notify";
 import { chatSchemas } from "./schemas";
 import { ChatSocket } from "./types";
 
@@ -28,6 +29,8 @@ export const chatHandlers = {
         emitTypingState(socket, roomId, false);
         
         socket.nsp.to(roomId).emit("room message", { tempId, ...mappedMessage });
+
+        await notifyRoom(userId, mappedMessage);
       }
     ),
     
