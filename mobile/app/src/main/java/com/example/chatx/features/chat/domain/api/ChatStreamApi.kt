@@ -1,5 +1,6 @@
 package com.example.chatx.features.chat.domain.api
 
+import com.example.chatx.core.domain.utils.UiText
 import com.example.chatx.features.chat.domain.models.ChatMessage
 import kotlinx.coroutines.flow.Flow
 
@@ -18,7 +19,7 @@ interface ChatStreamApi {
         data class NewMessage(val message: ChatMessage): Event
         data class TypingUsers(val users: List<String>): Event
         data class ReadMessages(val messages: List<ChatMessage>): Event
-        data class Error(val throwable: Throwable): Event
+        data class Error(val error: UiText): Event
 
         data class MessageValidationError(
             val error: String,

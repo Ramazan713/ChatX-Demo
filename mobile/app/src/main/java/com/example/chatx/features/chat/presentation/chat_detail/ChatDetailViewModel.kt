@@ -192,7 +192,7 @@ class ChatDetailViewModel(
                 when(event){
                     is ChatStreamApi.Event.Error -> {
                         _state.update { it.copy(
-                            message = event.throwable.message?.let { it1 -> UiText.Text(it1) }
+                            message = event.error
                         ) }
                     }
                     is ChatStreamApi.Event.NewMessage -> {

@@ -2,6 +2,7 @@ package com.example.chatx.core.data.manager
 
 import android.content.SharedPreferences
 import com.example.chatx.core.domain.manager.SessionManager
+import com.example.chatx.features.auth.domain.models.TokenData
 import com.example.chatx.features.auth.domain.models.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,20 +16,39 @@ private data class UserSaver(
     val username: String
 )
 
+@Serializable
+private data class TokenSaver(
+    val token: String,
+    val refreshToken: String
+)
+
 
 class SessionManagerImpl(
     private val sharedPreferences: SharedPreferences
 ): SessionManager {
 
-    override suspend fun saveToken(token: String) {
+    override suspend fun saveToken(token: TokenData) {
         withContext(Dispatchers.IO){
-            sharedPreferences.edit().putString(AUTH_TOKEN, token).apply()
+            val tokenSaver = TokenSaver(
+                token = token.token,
+                refreshToken = token.refreshToken
+            )
+            sharedPreferences.edit().putString(AUTH_TOKEN, Json.encodeToString(tokenSaver)).apply()
         }
     }
 
-    override suspend fun getToken(): String? {
-        return withContext(Dispatchers.IO){
-            sharedPreferences.getString(AUTH_TOKEN, null)
+    override suspend fun getToken(): TokenData? {
+        try{
+            return withContext(Dispatchers.IO){
+                val tokenData = sharedPreferences.getString(AUTH_TOKEN, null) ?: return@withContext null
+                val tokenSaver = Json.decodeFromString<TokenSaver>(tokenData)
+                TokenData(
+                    token = tokenSaver.token,
+                    refreshToken = tokenSaver.refreshToken
+                )
+            }
+        }catch (e: Exception){
+            return null
         }
     }
 

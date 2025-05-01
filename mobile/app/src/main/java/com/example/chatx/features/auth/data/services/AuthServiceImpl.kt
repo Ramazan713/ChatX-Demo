@@ -6,7 +6,9 @@ import com.example.chatx.core.domain.utils.Result
 import com.example.chatx.core.domain.utils.UiText
 import com.example.chatx.core.domain.utils.map
 import com.example.chatx.features.auth.data.api.AuthApi
+import com.example.chatx.features.auth.data.dtos.AuthResponseWithTokenDto
 import com.example.chatx.features.auth.data.mappers.toUser
+import com.example.chatx.features.auth.domain.models.TokenData
 import com.example.chatx.features.auth.domain.models.User
 import com.example.chatx.features.auth.domain.services.AuthService
 
@@ -18,22 +20,33 @@ class AuthServiceImpl(
     override suspend fun login(username: String, password: String): DefaultResult<User> {
         val response = authApi.login(username, password)
         val data = response.getSuccessData ?: return Result.errorWithUiText(response.getFailureError?.text ?: UiText.Text("Error"))
-        val user = data.user.toUser()
-
-        sessionManager.saveToken(data.token)
-        sessionManager.saveUser(user)
-
-        return response.map { user }
+        saveSession(data)
+        return response.map { data.dto.user.toUser() }
     }
 
     override suspend fun signUp(username: String, password: String): DefaultResult<User> {
         val response = authApi.signUp(username, password)
         val data = response.getSuccessData ?: return Result.errorWithUiText(response.getFailureError?.text ?: UiText.Text("Error"))
-        val user = data.user.toUser()
+        saveSession(data)
+        return response.map { data.dto.user.toUser() }
+    }
 
-        sessionManager.saveToken(data.token)
-        sessionManager.saveUser(user)
+    override suspend fun refresh(): DefaultResult<TokenData> {
+        val response = authApi.refresh()
+        val data = response.getSuccessData ?: return Result.errorWithUiText(response.getFailureError?.text ?: UiText.Text("Error"))
+        saveSession(data)
+        return response.map { data.toTokenData() }
+    }
 
-        return response.map { user }
+    private suspend fun saveSession(data: AuthResponseWithTokenDto){
+        sessionManager.saveUser(data.dto.user.toUser())
+        sessionManager.saveToken(data.toTokenData())
+    }
+
+    private fun AuthResponseWithTokenDto.toTokenData(): TokenData{
+        return TokenData(
+            token = dto.token,
+            refreshToken = refreshToken ?: ""
+        )
     }
 }

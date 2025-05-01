@@ -63,7 +63,10 @@ fun ChatDetailPage(
     EventHandler(state.uiEvent) { uiEvent ->
         when(uiEvent){
             ChatDetailUiEvent.ScrollToBottom -> {
-                lazyState.animateScrollToItem(state.messages.lastIndex)
+                val lastIndex = state.messages.lastIndex
+                if(lastIndex >= 0){
+                    lazyState.animateScrollToItem(lastIndex)
+                }
             }
         }
         onAction(ChatDetailAction.ClearUiEvent)

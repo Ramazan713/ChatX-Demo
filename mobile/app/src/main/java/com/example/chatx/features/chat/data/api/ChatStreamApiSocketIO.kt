@@ -2,6 +2,8 @@ package com.example.chatx.features.chat.data.api
 
 import com.example.chatx.BuildConfig
 import com.example.chatx.core.domain.manager.SessionManager
+import com.example.chatx.core.domain.utils.UiText
+import com.example.chatx.features.auth.domain.services.AuthService
 import com.example.chatx.features.chat.data.dtos.MessageDto
 import com.example.chatx.features.chat.data.mappers.toChatMessage
 import com.example.chatx.features.chat.domain.api.ChatStreamApi
@@ -11,8 +13,10 @@ import io.socket.engineio.client.transports.Polling
 import io.socket.engineio.client.transports.WebSocket
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.json.JSONArray
 import org.json.JSONObject
@@ -21,7 +25,8 @@ private inline fun <reified T> Json.decodeSocket(arg: Any?): T =
     decodeFromString(arg?.toString() ?: error("Missing payload"))
 
 class ChatStreamApiSocketIO(
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val authService: AuthService
 ): ChatStreamApi {
     private var socket: Socket? = null
     private var username = ""
@@ -32,27 +37,54 @@ class ChatStreamApiSocketIO(
 
     override fun events(roomId: String): Flow<ChatStreamApi.Event> {
         return callbackFlow {
-            val socket  = createSocket()
-            socket.on(Socket.EVENT_CONNECT) {
-                socket.emit("join room", JSONObject().apply {
-                    put("roomId", roomId)
-                })
-            }
-            registerMessageEvents(socket)
-            registerTypingEvents(socket)
-            registerConnectErrorEvents(socket)
-            registerReadMessagesEvents(socket)
-            registerValidationErrorEvents(socket)
+            var attempts = 0
+            var delayMillis = 1000L
 
-            this@ChatStreamApiSocketIO.socket = socket
-            socket.connect()
+            suspend fun doConnect() {
+                socket?.disconnect();
+                socket?.off()
+                val socket = createSocket()
+                socket.on(Socket.EVENT_CONNECT) { socket.emit("join room", JSONObject().apply {
+                    put("roomId", roomId)
+                }) }
+                registerMessageEvents(socket)
+                registerTypingEvents(socket)
+                registerReadMessagesEvents(socket)
+                registerValidationErrorEvents(socket)
+                registerConnectErrorEvents(socket) {
+                    launch {
+                        delay(delayMillis)
+                        doConnect()
+                        attempts++
+                        delayMillis *= 2
+                        if(attempts == 3){
+                            trySend(ChatStreamApi.Event.Error(UiText.Text("Connection Error")))
+                        }
+                    }
+                }
+                this@ChatStreamApiSocketIO.socket = socket
+                socket.connect()
+            }
+
+            doConnect()
 
             awaitClose {
                 this@ChatStreamApiSocketIO.socket = null
-                socket.disconnect()
-                socket.off()
+                socket?.disconnect()
+                socket?.off()
             }
         }
+    }
+
+    private suspend fun createSocket(): Socket {
+        val token = sessionManager.getToken()?.token
+        username = sessionManager.getUser()?.username ?: ""
+        val opts = IO.Options().apply {
+            transports = arrayOf(WebSocket.NAME, Polling.NAME)
+            reconnection = true
+            extraHeaders = mapOf("Authorization" to listOf("Bearer $token"))
+        }
+        return IO.socket("${BuildConfig.CHAT_BASE_URL}/chat", opts)
     }
 
 
@@ -82,17 +114,6 @@ class ChatStreamApiSocketIO(
             put("roomId", roomId)
             put("messageIds", JSONArray().apply { messageIds.forEach { put(it) } })
         })
-    }
-
-    private suspend fun createSocket(): Socket {
-        val token = sessionManager.getToken()
-        username = sessionManager.getUser()?.username ?: ""
-        val opts = IO.Options().apply {
-            transports = arrayOf(WebSocket.NAME, Polling.NAME)
-            reconnection = true
-            extraHeaders = mapOf("Authorization" to listOf("Bearer $token"))
-        }
-        return IO.socket("${BuildConfig.CHAT_BASE_URL}/chat", opts)
     }
 
     private fun ProducerScope<ChatStreamApi.Event>.registerMessageEvents(socket: Socket) {
@@ -134,7 +155,7 @@ class ChatStreamApiSocketIO(
                     val userMessage = payload?.optString("message") ?: ""
                     trySend(ChatStreamApi.Event.MessageValidationError(error, userMessage, tempId))
                 }else{
-                    trySend(ChatStreamApi.Event.Error(Error(error)))
+                    trySend(ChatStreamApi.Event.Error(UiText.Text(error)))
                 }
             }catch (e: Exception){
                 println("AppXXXX e: $e")
@@ -143,10 +164,31 @@ class ChatStreamApiSocketIO(
         }
     }
 
-    private fun ProducerScope<ChatStreamApi.Event>.registerConnectErrorEvents(socket: Socket){
+    private fun ProducerScope<ChatStreamApi.Event>.registerConnectErrorEvents(socket: Socket, reconnect: () -> Unit){
         socket.on(Socket.EVENT_CONNECT_ERROR) { args ->
-            val err = args.getOrNull(0) as? Throwable ?: Exception("Unknown")
-            trySend(ChatStreamApi.Event.Error(err))
+            val errorRaw = args.getOrNull(0)?.toString() ?: "{}"
+            val errorData = try {
+                JSONObject(errorRaw)
+            } catch (e: Exception) {
+                JSONObject()
+            }
+
+            when (errorData.optString("message", "unknown")) {
+                "token_expired", "invalid_token" -> {
+                    launch {
+                        val success = authService.refresh()
+                        success.onFailure { err ->
+                            trySend(ChatStreamApi.Event.Error(err.text))
+                        }
+                        reconnect()
+                    }
+                }
+                else -> {
+                    trySend(ChatStreamApi.Event.Error(UiText.Text("Error")))
+                }
+            }
+
+            println("AppXXXX EVENT_CONNECT_ERROR: $errorData")
         }
     }
 }

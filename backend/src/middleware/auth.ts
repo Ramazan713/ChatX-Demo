@@ -38,16 +38,25 @@ export async function authSocketRequired(socket: Socket, next: any){
 
         if(!token) throw Error("empty token")
         
-        const payload = JWTUtil.verify(token) as {id: string}        
-        const id = payload.id
+        try {
+            const payload = JWTUtil.verify(token) as { id: string }
+            const id = payload.id
 
-        const user = await prisma.user.findUnique({
-            where: { id }
-        })
-        if(!user) throw Error()
-
-        socket.data.user = user
-        next()
+            const user = await prisma.user.findUnique({
+                where: { id }
+            })
+            if(!user) throw Error()
+    
+            socket.data.user = user
+            next()
+        } catch (e: any) {
+            if (e.name === 'TokenExpiredError') {
+                next(new Error("token_expired"))
+            } else {
+                next(new Error("invalid_token"))
+            }
+        }   
+       
     }catch(e){
         console.log("UnAuthrized")
         next(new Error("Unathrozied"))
