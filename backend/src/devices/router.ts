@@ -23,6 +23,10 @@ router.post("/", validateBody(createDeviceSchema), async(req: Request, res: Resp
     const { token, platform }: CreateDeviceRequest = req.body
     const userId = req.user!!.id
 
+    await prisma.userDevice.delete({
+        where: {token}
+    })
+
     const device = await prisma.userDevice.upsert({
         where: { token, userId },
         create: {

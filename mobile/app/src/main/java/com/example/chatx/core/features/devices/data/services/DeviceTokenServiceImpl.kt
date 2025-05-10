@@ -35,7 +35,9 @@ class DeviceTokenServiceImpl(
 
         defaultRequest {
             headers {
-                runBlocking { sessionManager.getToken() }?.let { token ->
+                runBlocking {
+                    sessionManager.getToken()?.token
+                }?.let { token ->
                     set("Authorization", "Bearer $token")
                 }
             }

@@ -18,7 +18,7 @@ export async function notifyRoom(
   
 
   const userRooms = await prisma.userRoom.findMany({
-    where: { roomId, muted: false, userId: {notIn: [userId]} },
+    where: { roomId, muted: false, userId: {notIn: [userId]}, OR: [{leftAt: {isSet: false}}, {leftAt: null}] },
     include: { user: { include: { devices: true } } }
   });
 
