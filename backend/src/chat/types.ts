@@ -22,6 +22,14 @@ export interface ChatRoomDto {
     leftAt: Date | null;
 }
 
+export interface FetchMessageOptions {
+  userId:    string;
+  roomId:    string;
+  limit?:    number;
+  since?:    Date;    // en son gelen createdAt
+  afterId?:  string;  // aynı timestamp'te son id
+}
+
 export interface ChatSocketData {
     user: AuthUser;
     joinedRoom?: string;

@@ -42,17 +42,18 @@ export default class ChatController {
         const messageId = req.params.messageId;
 
         const messageDto = await chatService.markAsRead(messageId, user.username, user.id);
-        const mappedData = mapMessageToDto(messageDto)
-        res.status(200).send(mappedData);
+        res.status(200).send(messageDto);
     }
 
     async getMessages(req: Request, res: Response): Promise<any>{
         const userId = req.user!!.id
         const limit  = Number(req.query.limit) || 20;
         const roomId = req.params.roomId;
+        const since = req.query.since ? new Date(req.query.since as string) : undefined;
+        const afterId = req.query.afterId as string | undefined;
 
-        const messages = await chatService.getMessages(userId, roomId, limit)
-        res.json(messages.map(m => mapMessageToDto(m)))
+        const messages = await chatService.getMessages({userId, roomId, limit, since, afterId})
+        res.json(messages)
     }
 
     async sendMessage(req: Request, res: Response): Promise<any>{
@@ -61,7 +62,7 @@ export default class ChatController {
     
         const createdMessage = await chatService.sendMessage(userId, roomId, {message})
         if(!createdMessage) return res.status(404).send({"error": "not found"})
-        return res.send(mapMessageToDto(createdMessage))
+        return res.send(createdMessage)
     }
 
 }

@@ -4,7 +4,9 @@ import android.app.Application
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
 import com.example.chatx.core.data.manager.SessionManagerImpl
+import com.example.chatx.core.data.services.ConnectivityObserverImpl
 import com.example.chatx.core.domain.manager.SessionManager
+import com.example.chatx.core.domain.services.ConnectivityObserver
 import com.example.chatx.features.auth.domain.services.AuthService
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
@@ -29,6 +31,8 @@ val coreModule = module {
     }
 
     singleOf(::SessionManagerImpl).bind<SessionManager>()
+
+    singleOf(::ConnectivityObserverImpl).bind<ConnectivityObserver>()
 
     factory {
         val sessionManager = get<SessionManager>()

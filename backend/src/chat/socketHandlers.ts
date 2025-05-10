@@ -23,14 +23,13 @@ export const chatHandlers = {
         const createdMessage = await chatService.sendMessage(userId, roomId, { message });
         if (!createdMessage) return;
         
-        const mappedMessage = mapMessageToDto(createdMessage);
-        console.log("message: ", roomId, mappedMessage);
+        console.log("message: ", roomId, createdMessage);
         
         emitTypingState(socket, roomId, false);
         
-        socket.nsp.to(roomId).emit("room message", { tempId, ...mappedMessage });
+        socket.nsp.to(roomId).emit("room message", { tempId, ...createdMessage });
 
-        await notifyRoom(userId, mappedMessage);
+        await notifyRoom(userId, createdMessage);
       }
     ),
     
@@ -47,8 +46,7 @@ export const chatHandlers = {
     readMessages: withValidation("read messages", chatSchemas["read messages"], async (socket, { messageIds, roomId }) => {
         const user = socket.data.user
         const updatedMessages = await chatService.markAsReads(messageIds, user.username, user.id);
-        const mappedMessages = updatedMessages.map(m => mapMessageToDto(m))
-        socket.nsp.to(roomId).emit("read messages", mappedMessages)
+        socket.nsp.to(roomId).emit("read messages", updatedMessages)
     }) ,
 
     disconnect: (socket: ChatSocket) => {

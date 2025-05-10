@@ -14,9 +14,11 @@ import com.example.chatx.features.chat.domain.models.ChatRoom
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
+import kotlinx.datetime.Instant
 
 class ChatApiImpl(
     private val client: HttpClient
@@ -48,10 +50,12 @@ class ChatApiImpl(
         }
     }
 
-    override suspend fun getMessages(roomId: String): DefaultResult<List<ChatMessage>> {
+    override suspend fun getMessages(roomId: String, lastReceivedAt: Instant?, lastReceivedId: String?): DefaultResult<List<ChatMessage>> {
         return safeCall {
             client.get {
                 url("$BASE_URL/api/chat/messages/$roomId")
+                lastReceivedAt?.let { parameter("since", lastReceivedAt) }
+                lastReceivedId?.let { parameter("afterId", lastReceivedId) }
             }.body<List<MessageDto>>().map { it.toChatMessage() }
         }
     }

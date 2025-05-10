@@ -44,9 +44,16 @@ class ChatStreamApiSocketIO(
                 socket?.disconnect();
                 socket?.off()
                 val socket = createSocket()
-                socket.on(Socket.EVENT_CONNECT) { socket.emit("join room", JSONObject().apply {
-                    put("roomId", roomId)
-                }) }
+                socket.on(Socket.EVENT_CONNECT) {
+                    trySend(ChatStreamApi.Event.ConnectionStatus(true))
+                    socket.emit("join room", JSONObject().apply {
+                        put("roomId", roomId)
+                    })
+                }
+                socket.on(Socket.EVENT_DISCONNECT){
+                    trySend(ChatStreamApi.Event.ConnectionStatus(false))
+                }
+
                 registerMessageEvents(socket)
                 registerTypingEvents(socket)
                 registerReadMessagesEvents(socket)
@@ -74,6 +81,11 @@ class ChatStreamApiSocketIO(
                 socket?.off()
             }
         }
+    }
+
+    override fun reconnect() {
+        socket?.disconnect()
+        socket?.connect()
     }
 
     private suspend fun createSocket(): Socket {
@@ -166,6 +178,7 @@ class ChatStreamApiSocketIO(
 
     private fun ProducerScope<ChatStreamApi.Event>.registerConnectErrorEvents(socket: Socket, reconnect: () -> Unit){
         socket.on(Socket.EVENT_CONNECT_ERROR) { args ->
+            trySend(ChatStreamApi.Event.ConnectionStatus(false))
             val errorRaw = args.getOrNull(0)?.toString() ?: "{}"
             val errorData = try {
                 JSONObject(errorRaw)
@@ -182,9 +195,6 @@ class ChatStreamApiSocketIO(
                         }
                         reconnect()
                     }
-                }
-                else -> {
-                    trySend(ChatStreamApi.Event.Error(UiText.Text("Error")))
                 }
             }
 

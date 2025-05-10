@@ -1,5 +1,7 @@
 import prisma from "../prisma";
+import { mapMessageToDto } from "./mapper";
 import Message from "./models/message";
+import { ChatMessageDto, FetchMessageOptions } from "./types";
 
 
 class ChatService {
@@ -76,36 +78,59 @@ class ChatService {
     }
 
 
-    async getMessages(userId: string, roomId: string, limit = 20){
+    async getMessages({
+        userId, roomId, limit = 20, afterId, since
+    }: FetchMessageOptions): Promise<ChatMessageDto[]>{
         const userRoom = await prisma.userRoom.findUnique({
             where: {userId_roomId: { userId, roomId }}
         })
         if(!userRoom) return []
-        const messages = await prisma.message.findMany({
-            where: {
-                roomId: roomId,
-                createdAt: {
-                    gte: userRoom.joinedAt,
-                    lte: userRoom.leftAt ? userRoom.leftAt : undefined
+
+        const cursors: any[] = [];
+        if (since && afterId) {
+            cursors.push(
+                { createdAt: { gt: since } },
+                {
+                    AND: [
+                        { createdAt: { equals: since } },
+                        { id:        { gt: afterId } }
+                    ]
                 }
-            },
-            include: {
-                author: true
-            },
-            orderBy: {
-                createdAt: "desc"
-            },
+            );
+        } else if (since) {
+            cursors.push({ createdAt: { gt: since } });
+        }
+
+        const where: any = {
+            roomId,
+            AND: [
+            // joinedAt <= createdAt
+            { createdAt: { gte: userRoom.joinedAt } },
+            // createdAt <= leftAt  (eğer leftAt yoksa tümü)
+            ...(userRoom.leftAt ? [{ createdAt: { lte: userRoom.leftAt } }] : []),
+            // cursor filter’ı
+            ...(cursors.length ? [{ OR: cursors }] : [])
+            ]
+        };
+
+         const rows = await prisma.message.findMany({
+            where,
+            include: { author: true },
+            orderBy: [
+                { createdAt: 'desc' },
+                { id:        'desc' }
+            ],
             take: limit
-        })
-        return messages.sort((a, b) => a.createdAt > b.createdAt ? 1 : -1)
+        });
+        return rows.reverse().map(r => mapMessageToDto(r))
     }
 
 
-    async sendMessage(userId: string, roomId: string, message: Message){
+    async sendMessage(userId: string, roomId: string, message: Message): Promise<ChatMessageDto | null>{
         const userRoom = await prisma.userRoom.findUnique({
             where: {userId_roomId: { userId, roomId }, OR: [{leftAt: {isSet: false}}, {leftAt: null}]}
         })
-        if(!userRoom) return undefined
+        if(!userRoom) return null
         const createdMessage = await prisma.message.create({
             data: {
                 text: message.message,
@@ -116,10 +141,10 @@ class ChatService {
                 author: true,
             }
         })
-        return createdMessage
+        return mapMessageToDto(createdMessage)
     }
 
-    async markAsReads(messageIds: string[], username: string, userId: string){
+    async markAsReads(messageIds: string[], username: string, userId: string): Promise<ChatMessageDto[]>{
         const messages = await prisma.message.findMany({
             where: {id: {in: messageIds}},
         })
@@ -138,17 +163,17 @@ class ChatService {
             where: {id: {in: messageIds}},
             include: {author: true}
         })
-        return updatedMessages
+        return updatedMessages.map(m => mapMessageToDto(m))
     }
 
-    async markAsRead(messageId: string, username: string, userId: string){
+    async markAsRead(messageId: string, username: string, userId: string): Promise<ChatMessageDto>{
         const message = await prisma.message.findUnique({
             where: {id: messageId},
             include: {author: true}
         })
-        if(message?.authorId == userId) return message
-        if(message?.readBy.includes(username)) return message
-        return await prisma.message.update({
+        if(message?.authorId == userId) return mapMessageToDto(message)
+        if(message?.readBy.includes(username)) return mapMessageToDto(message)
+        const updatedMessage = await prisma.message.update({
             where: {id: messageId},
             data: {
                 readBy: {
@@ -159,6 +184,7 @@ class ChatService {
                 author: true,
             }
         })
+        return mapMessageToDto(updatedMessage)
     }
 }
 
