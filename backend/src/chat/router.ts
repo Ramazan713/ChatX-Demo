@@ -10,6 +10,10 @@ const chatController = new ChatController()
 router.use(authRequired)
 
 router.get("/rooms", chatController.listRooms)
+router.post("/rooms/mute/:roomId", chatController.muteRoom)
+router.post("/rooms/unmute/:roomId", chatController.unMuteRoom)
+router.delete("/rooms/:roomId", chatController.deleteRoom)
+
 router.post("/join", validateBody(createRoomSchema), chatController.join)
 router.post("/leave/:roomId", chatController.left)
 router.get("/messages/:roomId", chatController.getMessages)

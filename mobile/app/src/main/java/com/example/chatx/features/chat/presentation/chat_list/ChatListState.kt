@@ -6,5 +6,6 @@ import com.example.chatx.features.chat.domain.models.ChatRoom
 data class ChatListState(
     val isLoading: Boolean = false,
     val rooms: List<ChatRoom> = emptyList(),
-    val message: UiText? = null
+    val message: UiText? = null,
+    val dialogEvent: ChatListDialogEvent? = null
 )

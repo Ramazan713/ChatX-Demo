@@ -8,5 +8,6 @@ data class ChatRoom(
     val name: String,
     val leftAt: LocalDateTime?,
     val joinedAt: LocalDateTime,
-    val updatedAt: LocalDateTime
+    val updatedAt: LocalDateTime,
+    val muted: Boolean
 )

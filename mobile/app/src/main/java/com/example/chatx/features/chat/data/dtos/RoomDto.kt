@@ -12,5 +12,6 @@ data class RoomDto(
     val name: String,
     val leftAt: String?,
     val joinedAt: String,
-    val updatedAt: String
+    val updatedAt: String,
+    val muted: Boolean
 )

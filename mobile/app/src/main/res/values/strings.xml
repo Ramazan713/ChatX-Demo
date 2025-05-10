@@ -3,4 +3,13 @@
     <string name="chat_channel_id">chat_messages</string>
     <string name="chat_channel_name">Chat messages</string>
     <string name="chat_channel_description">chat channel</string>
+
+    <string name="text_field">Text Field</string>
+    <string name="cancel">Cancel</string>
+    <string name="approve">Approve</string>
+    <string name="error_not_empty_field">The text field cannot be empty</string>
+    <string name="menu">menu</string>
+    <string name="dropdown_menu_text">Dropdown menu</string>
+    <string name="n_menu_item">%1$s menu item</string>
+    <string name="close">close</string>
 </resources>

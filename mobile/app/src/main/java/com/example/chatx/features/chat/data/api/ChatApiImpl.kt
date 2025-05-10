@@ -2,6 +2,7 @@ package com.example.chatx.features.chat.data.api
 
 import com.example.chatx.BuildConfig
 import com.example.chatx.core.domain.utils.DefaultResult
+import com.example.chatx.core.domain.utils.EmptyDefaultResult
 import com.example.chatx.core.domain.utils.safeCall
 import com.example.chatx.features.chat.data.dtos.JoinRoomDto
 import com.example.chatx.features.chat.data.dtos.MessageDto
@@ -13,6 +14,7 @@ import com.example.chatx.features.chat.domain.models.ChatMessage
 import com.example.chatx.features.chat.domain.models.ChatRoom
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -47,6 +49,30 @@ class ChatApiImpl(
             client.post {
                 url("$BASE_URL/api/chat/leave/$roomId")
             }.body<RoomDto>().toChatRoom()
+        }
+    }
+
+    override suspend fun muteRoom(roomId: String): DefaultResult<ChatRoom> {
+        return safeCall {
+            client.post {
+                url("$BASE_URL/api/chat/rooms/mute/$roomId")
+            }.body<RoomDto>().toChatRoom()
+        }
+    }
+
+    override suspend fun unMuteRoom(roomId: String): DefaultResult<ChatRoom> {
+        return safeCall {
+            client.post {
+                url("$BASE_URL/api/chat/rooms/unmute/$roomId")
+            }.body<RoomDto>().toChatRoom()
+        }
+    }
+
+    override suspend fun deleteRoom(roomId: String): EmptyDefaultResult {
+        return safeCall {
+            client.delete {
+                url("$BASE_URL/api/chat/rooms/$roomId")
+            }.body<Unit>()
         }
     }
 

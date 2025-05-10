@@ -10,6 +10,7 @@ export function mapUserRoomToDto(ur: UserRoom & { room: Room }): ChatRoomDto {
       joinedAt:  ur.joinedAt,
       leftAt:    ur.leftAt,
       updatedAt,
+      muted: ur.muted
     };
 }
 

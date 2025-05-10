@@ -20,6 +20,7 @@ export interface ChatRoomDto {
     joinedAt: Date;
     updatedAt: Date;
     leftAt: Date | null;
+    muted: boolean;
 }
 
 export interface FetchMessageOptions {

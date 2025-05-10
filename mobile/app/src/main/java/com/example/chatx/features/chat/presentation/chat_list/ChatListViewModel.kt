@@ -30,7 +30,6 @@ class ChatListViewModel(
                             message = error.text
                         ) }
                     }
-
                     response.onSuccess { data ->
                         _state.update {
                             val newRooms = it.rooms.toMutableList()
@@ -47,9 +46,84 @@ class ChatListViewModel(
                 _state.update { it.copy(message = null) }
             }
 
-            is ChatListAction.LeaveRoom -> {
+            is ChatListAction.Leave -> {
                 viewModelScope.launch {
                     val response = chatApi.leftRoom(action.roomId)
+                    response.onFailure { error ->
+                        _state.update { it.copy(
+                            message = error.text
+                        ) }
+                    }
+                    response.onSuccess { data ->
+                        _state.update {
+                            val newRooms = it.rooms.toMutableList()
+                            newRooms.indexOfFirst { it.id == data.id }.let { index ->
+                                if(index != -1){
+                                    newRooms[index] = data
+                                }
+                            }
+                            it.copy(
+                                rooms = newRooms,
+                                message = UiText.Text("success")
+                            )
+                        }
+                    }
+                }
+            }
+
+            is ChatListAction.ShowDialog -> {
+                _state.update { it.copy(
+                    dialogEvent = action.dialogEvent
+                ) }
+            }
+
+            is ChatListAction.Delete -> {
+                viewModelScope.launch {
+                    val response = chatApi.deleteRoom(action.roomId)
+                    response.onFailure { error ->
+                        _state.update { it.copy(
+                            message = error.text
+                        ) }
+                    }
+                    response.onSuccess {
+                        _state.update {
+                            val newRooms = it.rooms.toMutableList()
+                            newRooms.removeIf { it.id == action.roomId }
+                            it.copy(
+                                rooms = newRooms,
+                                message = UiText.Text("success")
+                            )
+                        }
+                    }
+                }
+            }
+            is ChatListAction.Mute -> {
+                viewModelScope.launch {
+                    val response = chatApi.muteRoom(action.roomId)
+                    response.onFailure { error ->
+                        _state.update { it.copy(
+                            message = error.text
+                        ) }
+                    }
+                    response.onSuccess { data ->
+                        _state.update {
+                            val newRooms = it.rooms.toMutableList()
+                            newRooms.indexOfFirst { it.id == data.id }.let { index ->
+                                if(index != -1){
+                                    newRooms[index] = data
+                                }
+                            }
+                            it.copy(
+                                rooms = newRooms,
+                                message = UiText.Text("success")
+                            )
+                        }
+                    }
+                }
+            }
+            is ChatListAction.UnMute -> {
+                viewModelScope.launch {
+                    val response = chatApi.unMuteRoom(action.roomId)
                     response.onFailure { error ->
                         _state.update { it.copy(
                             message = error.text

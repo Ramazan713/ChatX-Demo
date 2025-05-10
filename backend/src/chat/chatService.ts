@@ -1,7 +1,7 @@
 import prisma from "../prisma";
-import { mapMessageToDto } from "./mapper";
+import { mapMessageToDto, mapUserRoomToDto } from "./mapper";
 import Message from "./models/message";
-import { ChatMessageDto, FetchMessageOptions } from "./types";
+import { ChatMessageDto, ChatRoomDto, FetchMessageOptions } from "./types";
 
 
 class ChatService {
@@ -22,6 +22,34 @@ class ChatService {
             },
         })
         return userRooms
+    }
+
+    async muteRoom(userId: string, roomId: string): Promise<ChatRoomDto>{
+        const userRoom = await prisma.userRoom.update({
+            where: {userId_roomId: {roomId, userId}},
+            data: {
+                muted: true
+            },
+            include: {room: true}
+        })
+        return mapUserRoomToDto(userRoom)
+    }
+
+    async unMuteRoom(userId: string, roomId: string): Promise<ChatRoomDto>{
+        const userRoom = await prisma.userRoom.update({
+            where: {userId_roomId: {roomId, userId}},
+            data: {
+                muted: false
+            },
+            include: {room: true}
+        })
+        return mapUserRoomToDto(userRoom)
+    }
+
+    async deleteRoom(userId: string, roomId: string): Promise<void>{
+        await prisma.userRoom.delete({
+            where: {userId_roomId: {roomId, userId}},
+        })
     }
 
     async joinRoom(userId: string, roomName: string, isPublic: boolean = true) {

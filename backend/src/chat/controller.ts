@@ -13,6 +13,27 @@ export default class ChatController {
         res.json(mappedData)
     }
 
+    async muteRoom(req: Request, res: Response){
+        const userId = req.user!!.id
+        const roomId = req.params.roomId;
+        const userRoom = await chatService.muteRoom(userId, roomId)
+        res.json(userRoom)
+    }
+
+    async unMuteRoom(req: Request, res: Response){
+        const userId = req.user!!.id
+        const roomId = req.params.roomId;
+        const userRoom = await chatService.unMuteRoom(userId, roomId)
+        res.json(userRoom)
+    }
+
+    async deleteRoom(req: Request, res: Response){
+        const userId = req.user!!.id
+        const roomId = req.params.roomId;
+        await chatService.deleteRoom(userId, roomId)
+        res.status(204).send()
+    }
+
     async join(req: Request, res: Response): Promise<any>{
         const userId = req.user!!.id
         const { name, isPublic }: CreateRoomInput = req.body
