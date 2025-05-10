@@ -4,6 +4,12 @@ import { Namespace, Socket } from "socket.io";
 import { AuthUser } from "../models/user";
 import { ChatClientEvents, ChatServerEvents } from "./schemas";
 
+export interface ChatMessagesWithRoomDto {
+    messages: ChatMessageDto[]
+    room: ChatRoomDto
+}
+
+
 export interface ChatMessageDto {
     id: string;
     roomId: string;

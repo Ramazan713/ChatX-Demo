@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -55,10 +56,19 @@ class ChatDetailViewModel(
                 ) }
             }
         }
-        listenFlows()
+
         loadMessages()
-        sendTyping()
-        listenConnectivity()
+
+        _state
+            .map { it.room }
+            .filterNotNull()
+            .distinctUntilChanged()
+            .onEach {
+                listenFlows()
+                sendTyping()
+                listenConnectivity()
+            }
+            .launchIn(viewModelScope)
     }
 
     fun onAction(action: ChatDetailAction){
@@ -174,18 +184,24 @@ class ChatDetailViewModel(
 
     private fun loadMessages(lastReceivedAt: Instant? = null, lastReceivedId: String? = null){
         viewModelScope.launch {
-            val dataResponse = chatApi.getMessages(args.roomId, lastReceivedAt, lastReceivedId)
+            _state.update { it.copy(
+                isLoading = it.room == null
+            ) }
+            val dataResponse = chatApi.getMessagesWithRoom(args.roomId, lastReceivedAt, lastReceivedId)
             dataResponse.onFailure { error ->
                 _state.update { it.copy(
-                    message = error.text
+                    message = error.text,
+                    isLoading = false
                 ) }
             }
-            dataResponse.onSuccess { fetched ->
+            dataResponse.onSuccess { messagesWithRoom ->
                 _state.update { it.copy(
-                    messages = sortMessages(it.messages + fetched),
-                    uiEvent = ChatDetailUiEvent.ScrollToBottom
+                    messages = sortMessages(it.messages + messagesWithRoom.messages),
+                    uiEvent = ChatDetailUiEvent.ScrollToBottom,
+                    room = messagesWithRoom.room,
+                    isLoading = false
                 ) }
-                ackMessages(fetched )
+                ackMessages(messagesWithRoom.messages)
             }
         }
     }

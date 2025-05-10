@@ -77,6 +77,17 @@ export default class ChatController {
         res.json(messages)
     }
 
+    async getMessagesWithRoom(req: Request, res: Response){
+        const userId = req.user!!.id
+        const limit  = Number(req.query.limit) || 20;
+        const roomId = req.params.roomId;
+        const since = req.query.since ? new Date(req.query.since as string) : undefined;
+        const afterId = req.query.afterId as string | undefined;
+
+        const result = await chatService.getMessagesWithRoom({userId, roomId, limit, since, afterId})
+        res.json(result)
+    }
+
     async sendMessage(req: Request, res: Response): Promise<any>{
         const { roomId, message }: RoomMesageInput = req.body
         const userId = req.user!!.id

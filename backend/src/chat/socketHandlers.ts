@@ -1,4 +1,5 @@
 import { createSocketValidator } from "../middleware/validate";
+import prisma from "../prisma";
 import { chatService } from "./chatService";
 import { mapMessageToDto } from "./mapper";
 import { notifyRoom } from "./notify";
@@ -11,6 +12,15 @@ const withValidation = createSocketValidator<typeof chatSchemas, ChatSocket>();
 
 export const chatHandlers = {
     joinRoom: withValidation("join room", chatSchemas["join room"], async (socket, { roomId }) => {
+        const userId = socket.data.user.id;
+        const userRoom = await prisma.userRoom.findFirst({
+          where: {roomId, userId, OR: [{leftAt: {isSet: false}}, {leftAt: null}]}
+        })
+
+        if(!userRoom){
+          console.log("join room failed: ", roomId)
+          return
+        }
         console.log("join room: ", roomId)
         socket.join(roomId);
         socket.data.joinedRoom = roomId;

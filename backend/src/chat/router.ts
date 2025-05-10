@@ -13,6 +13,8 @@ router.get("/rooms", chatController.listRooms)
 router.post("/rooms/mute/:roomId", chatController.muteRoom)
 router.post("/rooms/unmute/:roomId", chatController.unMuteRoom)
 router.delete("/rooms/:roomId", chatController.deleteRoom)
+router.get("/rooms/:roomId/details", chatController.getMessagesWithRoom)
+
 
 router.post("/join", validateBody(createRoomSchema), chatController.join)
 router.post("/leave/:roomId", chatController.left)

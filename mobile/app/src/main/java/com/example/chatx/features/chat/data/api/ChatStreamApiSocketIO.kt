@@ -76,9 +76,9 @@ class ChatStreamApiSocketIO(
             doConnect()
 
             awaitClose {
-                this@ChatStreamApiSocketIO.socket = null
                 socket?.disconnect()
                 socket?.off()
+                this@ChatStreamApiSocketIO.socket = null
             }
         }
     }

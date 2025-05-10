@@ -4,6 +4,7 @@ import com.example.chatx.core.domain.utils.DefaultResult
 import com.example.chatx.core.domain.utils.EmptyDefaultResult
 import com.example.chatx.features.chat.domain.models.ChatMessage
 import com.example.chatx.features.chat.domain.models.ChatRoom
+import com.example.chatx.features.chat.domain.models.MessagesWithRoom
 import kotlinx.datetime.Instant
 
 interface ChatApi {
@@ -25,4 +26,10 @@ interface ChatApi {
         lastReceivedAt: Instant? = null,
         lastReceivedId: String? = null
     ): DefaultResult<List<ChatMessage>>
+
+    suspend fun getMessagesWithRoom(
+        roomId: String,
+        lastReceivedAt: Instant? = null,
+        lastReceivedId: String? = null
+    ): DefaultResult<MessagesWithRoom>
 }

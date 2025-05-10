@@ -6,12 +6,15 @@ import com.example.chatx.core.domain.utils.EmptyDefaultResult
 import com.example.chatx.core.domain.utils.safeCall
 import com.example.chatx.features.chat.data.dtos.JoinRoomDto
 import com.example.chatx.features.chat.data.dtos.MessageDto
+import com.example.chatx.features.chat.data.dtos.MessagesWithRoomDto
 import com.example.chatx.features.chat.data.dtos.RoomDto
 import com.example.chatx.features.chat.data.mappers.toChatMessage
 import com.example.chatx.features.chat.data.mappers.toChatRoom
+import com.example.chatx.features.chat.data.mappers.toModel
 import com.example.chatx.features.chat.domain.api.ChatApi
 import com.example.chatx.features.chat.domain.models.ChatMessage
 import com.example.chatx.features.chat.domain.models.ChatRoom
+import com.example.chatx.features.chat.domain.models.MessagesWithRoom
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
@@ -83,6 +86,20 @@ class ChatApiImpl(
                 lastReceivedAt?.let { parameter("since", lastReceivedAt) }
                 lastReceivedId?.let { parameter("afterId", lastReceivedId) }
             }.body<List<MessageDto>>().map { it.toChatMessage() }
+        }
+    }
+
+    override suspend fun getMessagesWithRoom(
+        roomId: String,
+        lastReceivedAt: Instant?,
+        lastReceivedId: String?
+    ): DefaultResult<MessagesWithRoom> {
+        return safeCall {
+            client.get {
+                url("$BASE_URL/api/chat/rooms/$roomId/details")
+                lastReceivedAt?.let { parameter("since", lastReceivedAt) }
+                lastReceivedId?.let { parameter("afterId", lastReceivedId) }
+            }.body<MessagesWithRoomDto>().toModel()
         }
     }
 

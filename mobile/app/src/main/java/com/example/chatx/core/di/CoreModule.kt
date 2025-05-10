@@ -10,6 +10,7 @@ import com.example.chatx.core.domain.services.ConnectivityObserver
 import com.example.chatx.features.auth.domain.services.AuthService
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
@@ -43,6 +44,12 @@ val coreModule = module {
                     ignoreUnknownKeys = true
                 })
             }
+            install(HttpTimeout){
+                connectTimeoutMillis = 5_000
+                socketTimeoutMillis  = 5_000
+                requestTimeoutMillis = 10_000
+            }
+
             install(Auth) {
                 bearer {
                     loadTokens {

@@ -1,7 +1,7 @@
 import prisma from "../prisma";
 import { mapMessageToDto, mapUserRoomToDto } from "./mapper";
 import Message from "./models/message";
-import { ChatMessageDto, ChatRoomDto, FetchMessageOptions } from "./types";
+import { ChatMessageDto, ChatMessagesWithRoomDto, ChatRoomDto, FetchMessageOptions } from "./types";
 
 
 class ChatService {
@@ -103,6 +103,18 @@ class ChatService {
             })
             return userRoom
         })
+    }
+
+    async getMessagesWithRoom(options: FetchMessageOptions): Promise<ChatMessagesWithRoomDto>{
+        const messages = await this.getMessages(options)
+        const userRoom = await prisma.userRoom.findUnique({
+            where: {userId_roomId: { userId: options.userId, roomId: options.roomId }},
+            include: {room: true}
+        })
+        return {
+            messages,
+            room: mapUserRoomToDto(userRoom!!)
+        }
     }
 
 
