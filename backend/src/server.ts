@@ -1,7 +1,7 @@
 import http from "http"
 import app from "./app";
 import { Server } from "socket.io";
-import { setupChatNamespace } from "./chat/socketSetup";
+import { setupChatNamespace } from "./chat/socket/socketSetup";
 
 
 const httpServer = http.createServer(app)

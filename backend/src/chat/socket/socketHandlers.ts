@@ -1,10 +1,9 @@
-import { createSocketValidator } from "../middleware/validate";
-import prisma from "../prisma";
-import { chatService } from "./chatService";
-import { mapMessageToDto } from "./mapper";
-import { notifyRoom } from "./notify";
-import { chatSchemas } from "./schemas";
-import { ChatSocket } from "./types";
+import { createSocketValidator } from "../../middleware/validate";
+import prisma from "../../prisma";
+import { messageService } from "../services/messageService";
+import { chatSchemas } from "../types/schemas";
+import { ChatSocket } from "../types/types";
+import { notifyRoom } from "../utils/notify";
 
 
 const typingUsersByRoom = new Map<string, Set<string>>()
@@ -30,7 +29,7 @@ export const chatHandlers = {
         const { roomId, message, tempId } = data;
         const userId = socket.data.user.id;
         
-        const createdMessage = await chatService.sendMessage(userId, roomId, { message });
+        const createdMessage = await messageService.sendMessage(userId, roomId, message);
         if (!createdMessage) return;
         
         console.log("message: ", roomId, createdMessage);
@@ -55,7 +54,7 @@ export const chatHandlers = {
     
     readMessages: withValidation("read messages", chatSchemas["read messages"], async (socket, { messageIds, roomId }) => {
         const user = socket.data.user
-        const updatedMessages = await chatService.markAsReads(messageIds, user.username, user.id);
+        const updatedMessages = await messageService.markAsReads(messageIds, user.username, user.id, roomId);
         socket.nsp.to(roomId).emit("read messages", updatedMessages)
     }) ,
 

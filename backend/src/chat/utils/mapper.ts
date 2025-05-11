@@ -1,5 +1,5 @@
-import { Room, UserRoom, Message } from "../../generated/prisma";
-import { ChatMessageDto, ChatRoomDto } from "./types";
+import { Room, UserRoom, Message } from "../../../generated/prisma";
+import { ChatMessageDto, ChatRoomDto } from "./../types/types";
 
 export function mapUserRoomToDto(ur: UserRoom & { room: Room }): ChatRoomDto {
     const updatedAt = ur.leftAt ?? ur.room.updatedAt;

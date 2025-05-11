@@ -1,7 +1,7 @@
 // src/chat/types.ts
 
 import { Namespace, Socket } from "socket.io";
-import { AuthUser } from "../models/user";
+import { AuthUser } from "../../models/user";
 import { ChatClientEvents, ChatServerEvents } from "./schemas";
 
 export interface ChatMessagesWithRoomDto {

@@ -1,10 +1,9 @@
 //src/chat/schemas.ts
 
 import { z } from "zod";
-import { schema } from "../core/socket/schemaBuilder";
+import { schema } from "../../core/socket/schemaBuilder";
 
 export const roomMessageSchema = z.object({
-    roomId: schema.roomId(),
     message: z.string().min(1).max(2000),
     tempId: z.string().nullable().default(null)
 })
@@ -17,6 +16,13 @@ export const createRoomSchema = z.object({
     isPublic: z.boolean().nullable().default(null)
 })
 export type CreateRoomInput = z.infer<typeof createRoomSchema>
+
+
+export const updateRoomSchema = z.object({
+    muted: z.boolean().optional().nullable(),
+    left: z.boolean().optional().nullable(),
+})
+export type UpdateRoomInput = z.infer<typeof updateRoomSchema>
 
 
 export const chatSchemas = {

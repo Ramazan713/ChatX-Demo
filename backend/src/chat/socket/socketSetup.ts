@@ -1,7 +1,7 @@
 // src/features/chat/setup.ts
 import { Server } from "socket.io";
-import { ChatNamespace } from "./types";
-import { authSocketRequired } from "../middleware/auth";
+import { ChatNamespace } from "../types/types";
+import { authSocketRequired } from "../../middleware/auth";
 import { chatHandlers } from "./socketHandlers";
 
 export function setupChatNamespace(io: Server) {

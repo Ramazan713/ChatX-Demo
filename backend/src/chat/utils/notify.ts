@@ -1,7 +1,7 @@
 import { MulticastMessage } from "firebase-admin/lib/messaging/messaging-api";
-import { fcm } from "../core/fcm";
-import prisma from "../prisma";
-import type { ChatMessageDto } from "./types";
+import { fcm } from "../../core/fcm";
+import prisma from "../../prisma";
+import type { ChatMessageDto } from "./../types/types";
 
 
 
