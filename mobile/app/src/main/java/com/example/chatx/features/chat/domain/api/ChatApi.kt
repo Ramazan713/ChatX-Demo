@@ -9,7 +9,7 @@ import kotlinx.datetime.Instant
 
 interface ChatApi {
 
-    suspend fun getPublicRooms(): DefaultResult<List<ChatRoom>>
+    suspend fun getRooms(): DefaultResult<List<ChatRoom>>
 
     suspend fun joinRoom(roomName: String): DefaultResult<ChatRoom>
 

@@ -8,6 +8,7 @@ import com.example.chatx.features.chat.data.dtos.JoinRoomDto
 import com.example.chatx.features.chat.data.dtos.MessageDto
 import com.example.chatx.features.chat.data.dtos.MessagesWithRoomDto
 import com.example.chatx.features.chat.data.dtos.RoomDto
+import com.example.chatx.features.chat.data.dtos.UpdateRoomDto
 import com.example.chatx.features.chat.data.mappers.toChatMessage
 import com.example.chatx.features.chat.data.mappers.toChatRoom
 import com.example.chatx.features.chat.data.mappers.toModel
@@ -20,6 +21,7 @@ import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
@@ -30,10 +32,10 @@ class ChatApiImpl(
 ): ChatApi {
     private val BASE_URL=BuildConfig.CHAT_BASE_URL
 
-    override suspend fun getPublicRooms(): DefaultResult<List<ChatRoom>> {
+    override suspend fun getRooms(): DefaultResult<List<ChatRoom>> {
         return safeCall {
             client.get {
-                url("${BASE_URL}/api/chat/rooms")
+                url("${BASE_URL}/api/rooms")
             }.body<List<RoomDto>>().map { it.toChatRoom() }
         }
     }
@@ -41,7 +43,7 @@ class ChatApiImpl(
     override suspend fun joinRoom(roomName: String): DefaultResult<ChatRoom> {
         return safeCall {
             client.post {
-                url("$BASE_URL/api/chat/join")
+                url("$BASE_URL/api/rooms")
                 setBody(JoinRoomDto(name = roomName, isPublic = true))
             }.body<RoomDto>().toChatRoom()
         }
@@ -49,24 +51,27 @@ class ChatApiImpl(
 
     override suspend fun leftRoom(roomId: String): DefaultResult<ChatRoom> {
         return safeCall {
-            client.post {
-                url("$BASE_URL/api/chat/leave/$roomId")
+            client.patch {
+                url("$BASE_URL/api/rooms/$roomId")
+                setBody(UpdateRoomDto(left=true))
             }.body<RoomDto>().toChatRoom()
         }
     }
 
     override suspend fun muteRoom(roomId: String): DefaultResult<ChatRoom> {
         return safeCall {
-            client.post {
-                url("$BASE_URL/api/chat/rooms/mute/$roomId")
+            client.patch {
+                url("$BASE_URL/api/rooms/$roomId")
+                setBody(UpdateRoomDto(muted=true))
             }.body<RoomDto>().toChatRoom()
         }
     }
 
     override suspend fun unMuteRoom(roomId: String): DefaultResult<ChatRoom> {
         return safeCall {
-            client.post {
-                url("$BASE_URL/api/chat/rooms/unmute/$roomId")
+            client.patch {
+                url("$BASE_URL/api/rooms/$roomId")
+                setBody(UpdateRoomDto(muted=false))
             }.body<RoomDto>().toChatRoom()
         }
     }
@@ -74,7 +79,7 @@ class ChatApiImpl(
     override suspend fun deleteRoom(roomId: String): EmptyDefaultResult {
         return safeCall {
             client.delete {
-                url("$BASE_URL/api/chat/rooms/$roomId")
+                url("$BASE_URL/api/rooms/$roomId")
             }.body<Unit>()
         }
     }
@@ -82,7 +87,7 @@ class ChatApiImpl(
     override suspend fun getMessages(roomId: String, lastReceivedAt: Instant?, lastReceivedId: String?): DefaultResult<List<ChatMessage>> {
         return safeCall {
             client.get {
-                url("$BASE_URL/api/chat/messages/$roomId")
+                url("$BASE_URL/api/rooms/$roomId/messages")
                 lastReceivedAt?.let { parameter("since", lastReceivedAt) }
                 lastReceivedId?.let { parameter("afterId", lastReceivedId) }
             }.body<List<MessageDto>>().map { it.toChatMessage() }
@@ -96,7 +101,8 @@ class ChatApiImpl(
     ): DefaultResult<MessagesWithRoom> {
         return safeCall {
             client.get {
-                url("$BASE_URL/api/chat/rooms/$roomId/details")
+                url("$BASE_URL/api/rooms/$roomId")
+                parameter("include", "messages")
                 lastReceivedAt?.let { parameter("since", lastReceivedAt) }
                 lastReceivedId?.let { parameter("afterId", lastReceivedId) }
             }.body<MessagesWithRoomDto>().toModel()

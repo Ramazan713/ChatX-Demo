@@ -152,7 +152,7 @@ class ChatListViewModel(
 
     private fun loadRooms(){
         viewModelScope.launch {
-            val roomsResponse = chatApi.getPublicRooms()
+            val roomsResponse = chatApi.getRooms()
             roomsResponse.onFailure { error ->
                 _state.update { it.copy(
                     message = error.text
