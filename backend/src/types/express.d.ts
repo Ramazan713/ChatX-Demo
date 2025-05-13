@@ -4,6 +4,11 @@ declare namespace Express {
       user?: {
         id: string
         username: string
-      }
+      },
+      validated?: {
+        body?:  any;
+        params?: any;
+        query?: any;
+      };
     }
 }

@@ -1,8 +1,8 @@
 import { Request, Response, Router } from "express";
 import authRequired from "../middleware/auth";
 import prisma from "../prisma";
-import validateBody from "../middleware/validate";
 import { createDeviceSchema, CreateDeviceRequest } from "./schemas";
+import { validateBody } from "../middleware/validateRequest";
 
 
 const router = Router()
@@ -20,7 +20,7 @@ router.get("/", async(req: Request, res: Response) => {
 })
 
 router.post("/", validateBody(createDeviceSchema), async(req: Request, res: Response) => {
-    const { token, platform }: CreateDeviceRequest = req.body
+    const { token, platform }: CreateDeviceRequest = req.validated?.body
     const userId = req.user!!.id
 
     await prisma.userDevice.delete({

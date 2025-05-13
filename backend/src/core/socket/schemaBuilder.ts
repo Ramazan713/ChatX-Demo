@@ -1,10 +1,12 @@
+import { ObjectId } from "mongodb";
 import { z } from "zod";
+
 
 
 export function createSchemaBuilder() {
   const commonFields = {
-    roomId: () => z.string().length(24),
-    userId: () => z.string().length(24),
+    objectId: ({ message }: {message ?: string} = {}) => z.string().refine(val => ObjectId.isValid(val),{message}),
+    roomId: () => z.string().refine(val => ObjectId.isValid(val))
   };
 
   return {

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { messageService } from '../services/messageService';
 import { roomService } from '../services/roomService';
-import { CreateRoomInput } from '../types/schemas';
+import { CreateRoomInput, MessageQueryInput } from '../types/schemas';
 
 
 export default class RoomController {
@@ -14,21 +14,21 @@ export default class RoomController {
 
     async updateRoom(req: Request, res: Response){
         const userId = req.user!!.id
-        const roomId = req.params.roomId;
-        const userRoom = await roomService.updateRoom(userId, roomId, req.body)
+        const roomId = req.validated?.params?.roomId;
+        const userRoom = await roomService.updateRoom(userId, roomId, req.validated?.body)
         res.json(userRoom)
     }
 
     async deleteRoom(req: Request, res: Response){
         const userId = req.user!!.id
-        const roomId = req.params.roomId;
+        const roomId = req.validated?.params?.roomId;
         await roomService.deleteRoom(userId, roomId)
         res.status(204).send()
     }
 
     async join(req: Request, res: Response): Promise<any>{
         const userId = req.user!!.id
-        const { name, isPublic }: CreateRoomInput = req.body
+        const { name, isPublic }: CreateRoomInput = req.validated?.body
 
         try {
             const exists = await roomService.existsUserRoom(userId, name);
@@ -42,18 +42,16 @@ export default class RoomController {
 
     async getRoomsWithDetail(req: Request, res: Response){
         const userId = req.user!!.id
-        const limit  = Number(req.query.limit) || 20;
-        const roomId = req.params.roomId;
-        const since = req.query.since ? new Date(req.query.since as string) : undefined;
-        const afterId = req.query.afterId as string | undefined;
-        const include = req.query.include
+        const roomId = req.validated?.params?.roomId;
+
+        const {limit, since, afterId, include}: MessageQueryInput = req.validated?.query
 
         const userRoom = await roomService.getUserRoom(userId, roomId)
         
         let response: any
 
         if(include == "messages"){
-            const messages = await messageService.getMessages({userId, roomId, limit, afterId, since})
+            const messages = await messageService.getMessages({userId, roomId, limit, since, afterId})
             response = {
                 "room": userRoom,
                 "messages": messages

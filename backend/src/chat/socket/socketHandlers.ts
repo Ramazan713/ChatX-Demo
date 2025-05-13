@@ -1,4 +1,4 @@
-import { createSocketValidator } from "../../middleware/validate";
+import { createSocketValidator } from "../../middleware/validateSocket";
 import prisma from "../../prisma";
 import { messageService } from "../services/messageService";
 import { chatSchemas } from "../types/schemas";

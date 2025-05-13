@@ -14,17 +14,10 @@ class MessageService {
         if(!userRoom) return []
 
         const cursors: any[] = [];
-        if (since && afterId) {
-            cursors.push(
-                { createdAt: { gt: since } },
-                {
-                    AND: [
-                        { createdAt: { equals: since } },
-                        { id:        { gt: afterId } }
-                    ]
-                }
-            );
-        } else if (since) {
+        if (afterId) {
+            cursors.push({ id: { gt: afterId } });
+        } 
+        if (since) {
             cursors.push({ createdAt: { gt: since } });
         }
 
@@ -36,7 +29,7 @@ class MessageService {
             // createdAt <= leftAt  (eğer leftAt yoksa tümü)
             ...(userRoom.leftAt ? [{ createdAt: { lte: userRoom.leftAt } }] : []),
             // cursor filter’ı
-            ...(cursors.length ? [{ OR: cursors }] : [])
+            ...(cursors.length ? [{ AND: cursors }] : [])
             ]
         };
 

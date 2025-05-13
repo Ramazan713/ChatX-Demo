@@ -25,6 +25,25 @@ export const updateRoomSchema = z.object({
 export type UpdateRoomInput = z.infer<typeof updateRoomSchema>
 
 
+export const roomIdSchema = z.object({
+  roomId: schema.objectId()
+})
+
+export const messageIdSchema = z.object({
+  messageId: schema.objectId()
+})
+
+
+export const messageQuerySchema = z.object({
+  limit: z.number({coerce: true}).min(1).max(100).default(20),
+  since: z.date({coerce: true}).optional().nullish().default(null),
+  afterId: schema.objectId().optional().nullable().default(null),
+  include: z.string().min(1).max(32).optional().nullable().default(null)
+})
+export type MessageQueryInput = z.infer<typeof messageQuerySchema>
+
+
+
 export const chatSchemas = {
   "join room": z.object({
     roomId: schema.roomId()

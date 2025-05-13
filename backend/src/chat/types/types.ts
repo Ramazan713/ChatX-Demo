@@ -33,8 +33,8 @@ export interface FetchMessageOptions {
   userId:    string;
   roomId:    string;
   limit?:    number;
-  since?:    Date;    // en son gelen createdAt
-  afterId?:  string;  // aynı timestamp'te son id
+  since:    Date | null;
+  afterId:  string  | null; 
 }
 
 export interface ChatSocketData {

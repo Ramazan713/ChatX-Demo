@@ -1,25 +1,5 @@
-import { NextFunction, Request, Response } from "express";
 import { Socket } from "socket.io";
-import { z, ZodError } from "zod";
-
-
-export default function validateBody<T>(schema: z.ZodType<T>): any{
-    return (req: Request, res: Response, next: NextFunction) => {
-        try{
-            req.body = schema.parse(req.body)
-            next()
-        }catch(err){
-            if(err instanceof ZodError){
-                return res.status(400).send({
-                    error: "Validation failed",
-                    payload: req.body,
-                    details: err.formErrors
-                })
-            }
-            next(err)
-        }
-    }
-}
+import { z } from "zod";
 
 
 export function createSocketValidator<
