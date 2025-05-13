@@ -5,17 +5,16 @@ import com.example.chatx.core.domain.utils.DefaultResult
 import com.example.chatx.core.domain.utils.EmptyDefaultResult
 import com.example.chatx.core.domain.utils.safeCall
 import com.example.chatx.features.chat.data.dtos.JoinRoomDto
-import com.example.chatx.features.chat.data.dtos.MessageDto
 import com.example.chatx.features.chat.data.dtos.MessagesWithRoomDto
+import com.example.chatx.features.chat.data.dtos.PageableMessagesDto
 import com.example.chatx.features.chat.data.dtos.RoomDto
 import com.example.chatx.features.chat.data.dtos.UpdateRoomDto
-import com.example.chatx.features.chat.data.mappers.toChatMessage
 import com.example.chatx.features.chat.data.mappers.toChatRoom
 import com.example.chatx.features.chat.data.mappers.toModel
 import com.example.chatx.features.chat.domain.api.ChatApi
-import com.example.chatx.features.chat.domain.models.ChatMessage
 import com.example.chatx.features.chat.domain.models.ChatRoom
 import com.example.chatx.features.chat.domain.models.MessagesWithRoom
+import com.example.chatx.features.chat.domain.models.PageableMessages
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
@@ -84,27 +83,35 @@ class ChatApiImpl(
         }
     }
 
-    override suspend fun getMessages(roomId: String, lastReceivedAt: Instant?, lastReceivedId: String?): DefaultResult<List<ChatMessage>> {
+    override suspend fun getMessages(
+        roomId: String,
+        afterId: String?,
+        beforeId: String?,
+        limit: Int,
+    ): DefaultResult<PageableMessages> {
         return safeCall {
             client.get {
                 url("$BASE_URL/api/rooms/$roomId/messages")
-                lastReceivedAt?.let { parameter("since", lastReceivedAt) }
-                lastReceivedId?.let { parameter("afterId", lastReceivedId) }
-            }.body<List<MessageDto>>().map { it.toChatMessage() }
+                afterId?.let { parameter("afterId", it) }
+                beforeId?.let { parameter("beforeId", it) }
+                parameter("limit", limit)
+            }.body<PageableMessagesDto>().toModel()
         }
     }
 
     override suspend fun getMessagesWithRoom(
         roomId: String,
-        lastReceivedAt: Instant?,
-        lastReceivedId: String?
+        afterId: String?,
+        beforeId: String?,
+        limit: Int,
     ): DefaultResult<MessagesWithRoom> {
         return safeCall {
             client.get {
                 url("$BASE_URL/api/rooms/$roomId")
                 parameter("include", "messages")
-                lastReceivedAt?.let { parameter("since", lastReceivedAt) }
-                lastReceivedId?.let { parameter("afterId", lastReceivedId) }
+                afterId?.let { parameter("afterId", it) }
+                beforeId?.let { parameter("beforeId", it) }
+                parameter("limit", limit)
             }.body<MessagesWithRoomDto>().toModel()
         }
     }

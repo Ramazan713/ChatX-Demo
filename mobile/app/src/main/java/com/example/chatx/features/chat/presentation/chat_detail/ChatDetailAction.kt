@@ -13,4 +13,6 @@ sealed interface ChatDetailAction {
     data object ClearUiEvent: ChatDetailAction
 
     data class Retry(val msg: ChatMessage): ChatDetailAction
+
+    data object LoadPreviousMessages: ChatDetailAction
 }

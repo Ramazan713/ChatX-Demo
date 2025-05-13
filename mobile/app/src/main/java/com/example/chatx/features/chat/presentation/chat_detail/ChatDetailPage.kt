@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,7 +27,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -38,6 +41,11 @@ import com.example.chatx.core.presentation.utils.ShowLifecycleToastMessage
 import com.example.chatx.features.chat.domain.models.ChatRoom
 import com.example.chatx.features.chat.presentation.chat_detail.components.ChatMessageItem
 import com.example.chatx.features.chat.presentation.chat_detail.components.TypingIndicator
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.onEach
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -57,7 +65,7 @@ fun ChatDetailPageRoot(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, FlowPreview::class)
 @Composable
 fun ChatDetailPage(
     state: ChatDetailState,
@@ -81,6 +89,17 @@ fun ChatDetailPage(
             }
         }
         onAction(ChatDetailAction.ClearUiEvent)
+    }
+
+
+    LaunchedEffect(lazyState, state.pageInfo) {
+        snapshotFlow { lazyState.firstVisibleItemIndex < 3 }
+            .debounce(300)
+            .distinctUntilChanged()
+            .filter { it }
+            .collect {
+                onAction(ChatDetailAction.LoadPreviousMessages)
+            }
     }
 
     Scaffold(
@@ -137,7 +156,24 @@ fun ChatDetailPage(
                     modifier = Modifier.weight(1f),
                     state = lazyState
                 ) {
-                    items(state.messages) { msg ->
+
+                    if (state.isPreviousLoading) {
+                        item {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
+
+                    items(
+                        items = state.messages,
+                        key = { it.id },
+                    ) { msg ->
                         ChatMessageItem(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -198,6 +234,7 @@ private fun ChatDetailPreview(modifier: Modifier = Modifier) {
     ChatDetailPage(
         state = ChatDetailState(
             isLoading = false,
+            isPreviousLoading = true,
             room = ChatRoom(
                 id = "",
                 muted = false,
@@ -208,6 +245,7 @@ private fun ChatDetailPreview(modifier: Modifier = Modifier) {
                 updatedAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
             )
         ),
+
         onAction = {},
         onNavigateBack = {
 

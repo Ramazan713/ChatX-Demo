@@ -103,6 +103,14 @@ class ChatDetailViewModel(
             is ChatDetailAction.Retry -> {
                 retryMessage(action.msg)
             }
+
+            ChatDetailAction.LoadPreviousMessages -> {
+                if (_state.value.isPreviousLoading) return
+                val pageInfo = _state.value.pageInfo ?: return
+                if(!pageInfo.hasPreviousPage) return
+                val firstItem = _state.value.messages.firstOrNull() ?: return
+                loadMessages(beforeId = firstItem.id)
+            }
         }
     }
 
@@ -182,24 +190,28 @@ class ChatDetailViewModel(
         }
     }
 
-    private fun loadMessages(lastReceivedAt: Instant? = null, lastReceivedId: String? = null){
+    private fun loadMessages(afterId: String? = null, beforeId: String? = null){
         viewModelScope.launch {
             _state.update { it.copy(
-                isLoading = it.room == null
+                isLoading = it.room == null,
+                isPreviousLoading = it.room != null && beforeId != null
             ) }
-            val dataResponse = chatApi.getMessagesWithRoom(args.roomId, lastReceivedAt, lastReceivedId)
+            val dataResponse = chatApi.getMessagesWithRoom(args.roomId, afterId = afterId, beforeId = beforeId)
             dataResponse.onFailure { error ->
                 _state.update { it.copy(
                     message = error.text,
-                    isLoading = false
+                    isLoading = false,
+                    isPreviousLoading = false
                 ) }
             }
             dataResponse.onSuccess { messagesWithRoom ->
                 _state.update { it.copy(
                     messages = sortMessages(it.messages + messagesWithRoom.messages),
-                    uiEvent = ChatDetailUiEvent.ScrollToBottom,
+                    uiEvent = if(beforeId != null) it.uiEvent else ChatDetailUiEvent.ScrollToBottom,
                     room = messagesWithRoom.room,
-                    isLoading = false
+                    pageInfo = if(afterId == null) messagesWithRoom.pageInfo else it.pageInfo,
+                    isLoading = false,
+                    isPreviousLoading = false
                 ) }
                 ackMessages(messagesWithRoom.messages)
             }
@@ -247,7 +259,7 @@ class ChatDetailViewModel(
                     is ChatStreamApi.Event.ConnectionStatus -> {
                         if(!event.isConnected) return@onEach
                         val lastMessage = _state.value.messages.lastOrNull { !it.failed && !it.pending } ?: return@onEach
-                        loadMessages(lastMessage.createdAt.toInstant(TimeZone.currentSystemDefault()), lastMessage.id)
+                        loadMessages(lastMessage.id)
                     }
                 }
             }

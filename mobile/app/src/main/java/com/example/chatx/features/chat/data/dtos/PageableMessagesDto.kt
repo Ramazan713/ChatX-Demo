@@ -3,8 +3,7 @@ package com.example.chatx.features.chat.data.dtos
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MessagesWithRoomDto(
+data class PageableMessagesDto(
     val messages: List<MessageDto>,
-    val room: RoomDto,
     val pageInfo: PageInfoDto
 )

@@ -5,6 +5,7 @@ import com.example.chatx.core.domain.utils.EmptyDefaultResult
 import com.example.chatx.features.chat.domain.models.ChatMessage
 import com.example.chatx.features.chat.domain.models.ChatRoom
 import com.example.chatx.features.chat.domain.models.MessagesWithRoom
+import com.example.chatx.features.chat.domain.models.PageableMessages
 import kotlinx.datetime.Instant
 
 interface ChatApi {
@@ -23,13 +24,15 @@ interface ChatApi {
 
     suspend fun getMessages(
         roomId: String,
-        lastReceivedAt: Instant? = null,
-        lastReceivedId: String? = null
-    ): DefaultResult<List<ChatMessage>>
+        afterId: String? = null,
+        beforeId: String? = null,
+        limit: Int = 20,
+    ): DefaultResult<PageableMessages>
 
     suspend fun getMessagesWithRoom(
         roomId: String,
-        lastReceivedAt: Instant? = null,
-        lastReceivedId: String? = null
+        afterId: String? = null,
+        beforeId: String? = null,
+        limit: Int = 20,
     ): DefaultResult<MessagesWithRoom>
 }
