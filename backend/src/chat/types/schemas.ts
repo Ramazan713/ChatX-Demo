@@ -35,9 +35,9 @@ export const messageIdSchema = z.object({
 
 
 export const messageQuerySchema = z.object({
-  limit: z.number({coerce: true}).min(1).max(100).default(20),
-  since: z.date({coerce: true}).optional().nullish().default(null),
   afterId: schema.objectId().optional().nullable().default(null),
+  beforeId: schema.objectId().optional().nullable().default(null),
+  limit: z.number({coerce: true}).min(1).max(100).default(20),
   include: z.string().min(1).max(32).optional().nullable().default(null)
 })
 export type MessageQueryInput = z.infer<typeof messageQuerySchema>

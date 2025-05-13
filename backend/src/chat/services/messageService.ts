@@ -1,48 +1,85 @@
 import prisma from "../../prisma";
+import { MessageQueryInput } from "../types/schemas";
+import { ChatMessageDto, ChatMessagesPageDto } from "../types/types";
 import { mapMessageToDto } from "../utils/mapper";
-import { ChatMessageDto, FetchMessageOptions } from "../types/types";
 
 class MessageService {
 
     async getMessages({
-        userId, roomId, limit = 20, afterId, since
-    }: FetchMessageOptions): Promise<ChatMessageDto[]>
-    {
+        userId, roomId, afterId, beforeId, limit = 20,
+    }: MessageQueryInput & { userId: string, roomId: string }): Promise<ChatMessagesPageDto> {
         const userRoom = await prisma.userRoom.findUnique({
             where: {userId_roomId: { userId, roomId }}
         })
-        if(!userRoom) return []
+        if(!userRoom) return { messages: [], pageInfo: { hasNextPage: false, nextItemId: null, hasPreviousPage: false, previousItemId: null } };
 
-        const cursors: any[] = [];
-        if (afterId) {
-            cursors.push({ id: { gt: afterId } });
-        } 
-        if (since) {
-            cursors.push({ createdAt: { gt: since } });
-        }
-
-        const where: any = {
+        const whereCommon: any = {
             roomId,
             AND: [
-            // joinedAt <= createdAt
-            { createdAt: { gte: userRoom.joinedAt } },
-            // createdAt <= leftAt  (eğer leftAt yoksa tümü)
-            ...(userRoom.leftAt ? [{ createdAt: { lte: userRoom.leftAt } }] : []),
-            // cursor filter’ı
-            ...(cursors.length ? [{ AND: cursors }] : [])
-            ]
-        };
+                { createdAt: { gte: userRoom.joinedAt } },
+                ...(userRoom.leftAt ? [{ createdAt: { lte: userRoom.leftAt } }] : []),
+            ],
+        }
 
-         const rows = await prisma.message.findMany({
-            where,
+        let orderDirection: 'asc' | 'desc' = 'desc'
+        if (afterId)  orderDirection = 'asc'
+
+        const whereCursor = {
+            ...(afterId  ? { id: { gt: afterId  } } : {}),
+            ...(beforeId ? { id: { lt: beforeId } } : {}),
+        }
+
+        let items = await prisma.message.findMany({
+            where: { ...whereCommon, ...whereCursor },
             include: { author: true },
             orderBy: [
-                { createdAt: 'desc' },
-                { id:        'desc' }
+                { createdAt: orderDirection },
+                { id:        orderDirection },
             ],
-            take: limit
-        });
-        return rows.reverse().map(r => mapMessageToDto(r))
+            take: limit + 1,
+        })
+
+        const hasExtra = items.length > limit
+        if (hasExtra) items = items.slice(0, limit)
+        if (orderDirection === 'desc') items = items.reverse();
+
+
+        const first  = items[0]
+        const last   = items[items.length - 1]
+        const nextItemId     = last  ? last.id  : null
+        const previousItemId = first ? first.id : null
+
+        const hasNextPage = !!last
+            && await prisma.message.count({
+                where: {
+                    roomId,
+                    ...whereCommon,
+                    createdAt: { gt:  last.createdAt }
+                },
+                take: 1
+            }) > 0
+
+        const hasPreviousPage = !!first
+            && await prisma.message.count({
+                where: {
+                    roomId,
+                    ...whereCommon,
+                    createdAt: { lt:  first.createdAt }  
+                },
+                take: 1
+            }) > 0
+       
+        
+        
+        return {
+            messages: items.map(m => mapMessageToDto(m)),
+            pageInfo: {
+                hasNextPage,
+                nextItemId,
+                hasPreviousPage,
+                previousItemId
+            }
+        }
     }
 
 
@@ -112,4 +149,4 @@ class MessageService {
 const messageService = new MessageService()
 export {
     messageService
-}
+};

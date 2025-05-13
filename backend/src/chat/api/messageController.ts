@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { messageService } from '../services/messageService';
-import { MessageQueryInput, RoomMesageInput } from '../types/schemas';
+import { RoomMesageInput } from '../types/schemas';
 
 
 export default class MessagesController {
@@ -17,10 +17,8 @@ export default class MessagesController {
     async getMessages(req: Request, res: Response): Promise<any>{
         const userId = req.user!!.id
         const roomId = req.params.roomId;
-        console.log("validated: ", req.validated)
-        const {limit, since, afterId}: MessageQueryInput = req.validated?.query
 
-        const messages = await messageService.getMessages({userId, roomId, limit, since, afterId})
+        const messages = await messageService.getMessages({userId, roomId, ...req.validated?.query})
         res.json(messages)
     }
 

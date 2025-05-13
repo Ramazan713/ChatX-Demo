@@ -23,7 +23,7 @@ export function validateRequest<S extends SchemaMap>(schemas: S): any {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
         
-      const validated: SchemaMap = {};
+      const validated: SchemaMap = req.validated || {};
 
       if (schemas.params) {
         const p = schemas.params.safeParse(req.params);
@@ -43,7 +43,6 @@ export function validateRequest<S extends SchemaMap>(schemas: S): any {
         validated.body = b.data;
         req.body = b.data
       }
-
       req.validated = validated;
       next();
     } catch (err: any) {

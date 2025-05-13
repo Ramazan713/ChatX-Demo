@@ -19,6 +19,16 @@ export interface ChatMessageDto {
     readBy: string[];
 }
 
+export interface ChatMessagesPageDto {
+  messages: ChatMessageDto[];
+  pageInfo: {
+    hasNextPage:  boolean;
+    nextItemId: string | null
+    hasPreviousPage:  boolean;
+    previousItemId: string | null
+  }
+}
+
 export interface ChatRoomDto {
     id: string;
     name: string;
@@ -27,14 +37,6 @@ export interface ChatRoomDto {
     updatedAt: Date;
     leftAt: Date | null;
     muted: boolean;
-}
-
-export interface FetchMessageOptions {
-  userId:    string;
-  roomId:    string;
-  limit?:    number;
-  since:    Date | null;
-  afterId:  string  | null; 
 }
 
 export interface ChatSocketData {

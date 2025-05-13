@@ -42,19 +42,19 @@ export default class RoomController {
 
     async getRoomsWithDetail(req: Request, res: Response){
         const userId = req.user!!.id
-        const roomId = req.validated?.params?.roomId;
-
-        const {limit, since, afterId, include}: MessageQueryInput = req.validated?.query
+        const roomId = req.validated?.params?.roomId as string;
+        const { include }: MessageQueryInput = req.validated?.query
 
         const userRoom = await roomService.getUserRoom(userId, roomId)
         
         let response: any
 
         if(include == "messages"){
-            const messages = await messageService.getMessages({userId, roomId, limit, since, afterId})
+            const messagesResponse = await messageService.getMessages({userId, roomId, ...req.validated?.query, include})
             response = {
                 "room": userRoom,
-                "messages": messages
+                "messages": messagesResponse.messages,
+                "pageInfo": messagesResponse.pageInfo
             }
         }else{
             response = {
