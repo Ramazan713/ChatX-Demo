@@ -53,15 +53,15 @@ export default class AuthController {
 
     async refresh(req: Request, res: Response): Promise<any>{
         const token = req.cookies["refreshToken"]
-        if(!token) return res.status(401).json({ message: "Refresh token missing" })
-
+        if(token == undefined || typeof(token) !== "string") 
+            return res.status(400).json({ message: "Refresh token missing" })
         
         try {
             const payload = JWTUtil.verify(token) as {sub: string}
             const user = await prisma.user.findUnique({
                 where: { id: payload.sub }
             })
-            if(!user) return res.status(401).json({ message: "user not found" })
+            if(!user) return res.status(404).json({ message: "user not found" })
 
             setRefreshTokenCookie(res, user, "/api/auth/refresh")
     

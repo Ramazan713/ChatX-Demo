@@ -9,6 +9,10 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import androidx.core.content.edit
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 @Serializable
 private data class UserSaver(
@@ -27,13 +31,22 @@ class SessionManagerImpl(
     private val sharedPreferences: SharedPreferences
 ): SessionManager {
 
+    private val _events = MutableSharedFlow<SessionManager.Event>()
+
+    override val events: Flow<SessionManager.Event>
+        get() = _events.asSharedFlow()
+
+    override suspend fun setSessionExpired() {
+        _events.emit(SessionManager.Event.SessionExpired)
+    }
+
     override suspend fun saveToken(token: TokenData) {
         withContext(Dispatchers.IO){
             val tokenSaver = TokenSaver(
                 token = token.token,
                 refreshToken = token.refreshToken
             )
-            sharedPreferences.edit().putString(AUTH_TOKEN, Json.encodeToString(tokenSaver)).apply()
+            sharedPreferences.edit { putString(AUTH_TOKEN, Json.encodeToString(tokenSaver)) }
         }
     }
 
@@ -58,7 +71,7 @@ class SessionManagerImpl(
                 id = user.id,
                 username = user.username
             )
-            sharedPreferences.edit().putString(AUTH_USER, Json.encodeToString(userSaver)).apply()
+            sharedPreferences.edit { putString(AUTH_USER, Json.encodeToString(userSaver)) }
         }
     }
 
@@ -78,8 +91,8 @@ class SessionManagerImpl(
     }
 
     override suspend fun signOut() {
-        sharedPreferences.edit().putString(AUTH_USER, null).apply()
-        sharedPreferences.edit().putString(AUTH_TOKEN, null).apply()
+        sharedPreferences.edit { putString(AUTH_USER, null) }
+        sharedPreferences.edit { putString(AUTH_TOKEN, null) }
     }
 
     companion object {

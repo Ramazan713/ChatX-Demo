@@ -21,6 +21,7 @@ import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.request
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
@@ -80,6 +81,9 @@ class AuthApiImpl(
     ): DefaultResult<AuthResponseWithTokenDto>{
         return safeCall {
             val response = execute()
+            if(response.status == HttpStatusCode.Forbidden){
+                sessionManager.setSessionExpired()
+            }
             val result = response.body<AuthResponseDto>()
 
             val cookies = client.cookies(response.request.url.toString())
